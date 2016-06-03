@@ -22,7 +22,7 @@ class DZDPSpider(scrapy.Spider):
     def parse(self, response):
         sefl.logger.info("Start Selenium process")
         self.driver.get(self.real_urls[0])
-        real_response = HtmlResponse(drvr.current_url, body=body, encoding='utf-8', request=None)
+        real_response = HtmlResponse(self.driver.current_url, body=self.driver.page_source, encoding='utf-8', request=None)
         
-        with open(filename, 'wb') as f:
-            f.write(response.body)
+        for a in response.xpath('//div[@class="J_brief-cont"]/text()'):
+            print a.extract() #print all reviews in this page
