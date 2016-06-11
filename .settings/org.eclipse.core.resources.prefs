@@ -1,2 +1,4 @@
 eclipse.preferences.version=1
 encoding//mycrawler/items.py=utf-8
+encoding//mycrawler/pipelines.py=utf-8
+encoding//mycrawler/settings.py=utf-8

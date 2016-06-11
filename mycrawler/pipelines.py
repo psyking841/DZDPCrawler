@@ -7,5 +7,10 @@
 
 
 class MycrawlerPipeline(object):
+    self.file = open('/Users/SPan/items.jl', 'wb')
+    
     def process_item(self, item, spider):
+        line = json.dumps(dict(item)) + "\n"
+        self.file.write(line)
+        self.file.close()
         return item
