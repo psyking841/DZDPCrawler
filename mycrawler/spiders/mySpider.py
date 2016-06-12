@@ -3,6 +3,7 @@ from selenium import webdriver
 from scrapy.http import HtmlResponse
 import logging
 from mycrawler.items import MycrawlerItem
+from mycrawler.lstData import *
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait 
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,14 +18,17 @@ class DZDPSpider(scrapy.Spider):
     ]
     
     def __init__(self):
+        #self.urlno = 0
         #self.real_url = "http://www.dianping.com/shop/17971182/review_more" #yulin
         #self.real_url = "http://www.dianping.com/shop/11549926/review_more" #yankoushi
         #self.real_url = "http://www.dianping.com/shop/9067814/review_more" #kehua
         #self.real_url = "http://www.dianping.com/shop/26954362/review_more" #ludao
         #self.real_url = "http://www.dianping.com/shop/6560134/review_more" #babao
         #self.real_url = "http://www.dianping.com/shop/6019933/review_more" #shuangnan
-        self.real_url = "http://www.dianping.com/shop/15907260/review_more" #zijing
+        #self.real_url = "http://www.dianping.com/shop/15907260/review_more" #zijing
         
+        self.url_list = lstData.get_urllist()
+        self.real_url = self.url_list.next()
         logging.info("Initiating...")
         #self.home_url = "http://www.dianping.com/shop/9067814/review_more"
         self.next_page = None
@@ -32,6 +36,8 @@ class DZDPSpider(scrapy.Spider):
         self.driver = webdriver.PhantomJS(executable_path = '/Users/SPan/Source/phantomjs-2.1.1/bin/phantomjs', service_args = service_args)
         self.response_home = None
         self.fake_url = "http://www.dmoz.org/"
+        self.shop_name = None
+        self.shop_id = None
     
     def parse(self, response):
         logging.info("response from fake url")
@@ -47,10 +53,21 @@ class DZDPSpider(scrapy.Spider):
         all_reviews = self.response_home.xpath('//div[@class="comment-list"]/ul/li') #includes all users and reviews
         logging.info("Got body of the page")
         #print(self.response_home.xpath('//h2/a/@href'))
-        self.check_element_exists(1, '//h2/a/@href')
-        shop_id = self.response_home.xpath('//h2/a/@href').extract()[0]
-        shop_id = re.findall(r"\d+", shop_id)
-        shop_name = self.response_home.xpath('//h2/a/text()').extract()[0]
+        if self.shop_name and self.shop_id:
+            pass
+        elif self.check_element_exists(5, '//h2/a'):
+            logging.info("fetch shop id and shop name")
+            shop_id = self.response_home.xpath('//h2/a/@href').extract()[0]
+            shop_id = re.findall(r"\d+", shop_id)
+            shop_name = self.response_home.xpath('//h2/a/text()').extract()[0]
+            self.shop_id = shop_id[0]
+            self.shop_name = shop_name
+        
+        #logging.info("shop name is " + self.shop_name[0])
+        #logging.info("shop id is " + self.shop_id[0])
+        #logging.info("shop name is " + shop_name)
+        #logging.info("shop id is " + shop_id)
+        #shop_name = self.response_home.xpath('//h2/a/text()').extract()[0]
         
         logging.info("scrape items")
         for rvw in all_reviews:
@@ -69,8 +86,8 @@ class DZDPSpider(scrapy.Spider):
             #i+=1
             
             item = MycrawlerItem()
-            item["merchandise_name"] = shop_name
-            item["merchandise_id"] = shop_id
+            item["merchandise_name"] = self.shop_name
+            item["merchandise_id"] = self.shop_id
             item["user_id"] = user_id
             item["user_name"] = user_name
             item["user_contribution"] = user_contribution
@@ -88,13 +105,25 @@ class DZDPSpider(scrapy.Spider):
             logging.info("Next page url will be: " + next_page_url)
             logging.info("Got next page info")
             yield scrapy.Request(url=self.fake_url, callback=self.parse, dont_filter=True)
+        else:
+            try:
+                self.real_url = self.url_list.next()
+                logging.info("next url is " + self.real_url)
+                self.next_page = None
+                self.shop_id = None
+                self.shop_name = None
+                logging.info("Crawling next shop at " + self.real_url)
+                yield scrapy.Request(url=self.fake_url, callback=self.parse, dont_filter=True)
+            except StopIteration:
+                logging.info("Finish crawling all urls")
+                pass
         
     def check_element_exists(self, time_out, xpath):
         try:
             self.logger.info("Checking xpath: %s exists" % xpath)
             WebDriverWait(self.driver, time_out).until(EC.presence_of_element_located((By.XPATH, xpath)))
             #time.sleep(5)
-            self.driver.find_element_by_xpath(xpath)
+            #self.driver.find_element_by_xpath(xpath)
         except TimeoutException:
             return False
         except NoSuchElementException:
