@@ -21,3 +21,13 @@ class MycrawlerItem(scrapy.Item):
     user_review_tags = scrapy.Field()
     user_comment = scrapy.Field()
     comment_timestamp = scrapy.Field()
+    
+class MSStoreAppItem(scrapy.Item):
+    user_name = scrapy.Field()
+    comment_timestamp = scrapy.Field()
+    comment_title = scrapy.Field()
+    comment_rating = scrapy.Field()
+    user_comment = scrapy.Field()
+    comment_helpful_num = scrapy.Field()
+    comment_not_helpful_num = scrapy.Field()
+    
